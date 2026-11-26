@@ -1,29 +1,27 @@
-// Office Artifacts — The One-Line Placard
-// Entry: one-line museum placard (1-180 characters) for a wall thermostat.
-const fs = require("node:fs");
-const path = require("node:path");
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
-const ANSWER =
-  "Wall thermostat, c. 2016. Plastic. Worn smooth around 72°F by daily petitions; excavation revealed it was wired to nothing. Gift of Building Management.";
+const ANSWER = "Cubicle nameplate, c. 2016. Aluminum and vinyl. Seven strata of label-maker tape, each pasted directly over the prior ruler's name. Gift of Facilities.";
 
-// Validate the 1-180 CHARACTER gate (not bytes): ° counts as 1 character.
-const len = [...ANSWER].length;
-if (len < 1 || len > 180) {
-  throw new Error("Answer length " + len + " chars is outside the 1-180 gate");
+const outputDir = process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
+
+if (ANSWER.includes("\n") || ANSWER.includes("\r")) {
+  throw new Error("Gate failed: answer must be a single line with no newline");
 }
 
-const outDir =
-  process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
-fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(path.join(outDir, "entry.txt"), ANSWER, "utf8");
-const byteLen = Buffer.byteLength(ANSWER, "utf8");
-console.log(
-  "Wrote entry.txt (" + len + " chars, " + byteLen + " bytes UTF-8)"
-);
+if ([...ANSWER].length < 1 || [...ANSWER].length > 180) {
+  throw new Error(`Gate failed: answer length ${[...ANSWER].length} chars, must be 1-180`);
+}
 
-// Placard notes (why this artifact):
-// - "c. 2016" dates the thermostat like a museum object.
-// - "Worn smooth around 72°F" is the tell: years of hopeful nudging.
-// - "wired to nothing" is the punchline — a placebo control, the office's
-//   most petitioned and least powerful artifact.
-// - "Gift of Building Management" closes it in deadpan accession style.
+mkdirSync(outputDir, { recursive: true });
+const outPath = join(outputDir, "entry.txt");
+writeFileSync(outPath, ANSWER, "utf8");
+
+const back = readFileSync(outPath, "utf8");
+if (back !== ANSWER) {
+  throw new Error("Verification failed: entry.txt does not match ANSWER byte-exactly");
+}
+if (Buffer.byteLength(back, "utf8") !== Buffer.byteLength(ANSWER, "utf8")) {
+  throw new Error("Verification failed: entry.txt byte length differs from ANSWER");
+}
+console.log(`OK: entry.txt written (${[...ANSWER].length} chars) to ${outPath}`);
